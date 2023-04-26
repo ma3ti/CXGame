@@ -1,6 +1,7 @@
-package connectx.SpycesarPlayer;
+package connectx.Spycesar;
 
 import connectx.CXBoard;
+import connectx.CXCellState;
 import connectx.CXGameState;
 import connectx.CXPlayer;
 
@@ -10,14 +11,13 @@ import java.util.concurrent.TimeoutException;
 
 public class Spycesar implements CXPlayer {
 
-
     private Random rand;
     private CXGameState myWin;
     private CXGameState yourWin;
     private int  TIMEOUT;
     private long START;
 
-
+    // CONSTRUCTOR
     public Spycesar(){}
 
     @Override
@@ -29,7 +29,7 @@ public class Spycesar implements CXPlayer {
         TIMEOUT = timeout_in_secs;
 
     }
-
+// TODO: gestire out of bound
     @Override
     public int selectColumn(CXBoard B) {
 
@@ -38,7 +38,20 @@ public class Spycesar implements CXPlayer {
         Integer[] L = B.getAvailableColumns();
         int save    = L[rand.nextInt(L.length)]; // Save a random column
 
+
+
         try {
+
+            // first move in the center column if is first
+            if (B.numOfMarkedCells() == 0){ return B.N / 2; }
+
+            // first move above the player or in the center column if is second
+            if(B.numOfMarkedCells() == 1){
+
+                if(B.getLastMove().j == B.N / 2) return B.getLastMove().j;
+                else return B.N / 2;
+            }
+
             int col = singleMoveWin(B,L);
             if(col != -1)
                 return col;
@@ -50,6 +63,7 @@ public class Spycesar implements CXPlayer {
         }
     }
 
+
     private void checktime() throws TimeoutException {
         if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0))
             throw new TimeoutException();
@@ -60,6 +74,7 @@ public class Spycesar implements CXPlayer {
      *
      * Returns the winning column if there is one, otherwise -1
      */
+    //TODO: Cercare solo sulle colonne adiacenti e non su tutte le libere
     private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
         for(int i : L) {
             checktime(); // Check timeout at every iteration
@@ -90,6 +105,7 @@ public class Spycesar implements CXPlayer {
             boolean stop;
 
             for(j = 0, stop=false; j < L.length && !stop; j++) {
+                // TODO: capire riga sotto
                 //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
                 checktime();
                 if(!B.fullColumn(L[j])) {

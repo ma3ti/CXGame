@@ -97,7 +97,7 @@ public class CXBoard {
 	public void reset() {
 		currentPlayer = 0;
 		gameState     = CXGameState.OPEN;
-		initBoard();
+			initBoard();
 		initDataStructures();
 	}
 

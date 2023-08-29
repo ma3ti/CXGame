@@ -1,6 +1,6 @@
 - Command-line compile.  In the connectx/ directory run::
 
-		javac -cp ".." *.java */*.java
+            javac -cp ".." *.java */*.java
 
 
 CXGame application:

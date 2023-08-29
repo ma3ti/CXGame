@@ -4,7 +4,6 @@ import connectx.CXBoard;
 import connectx.CXCellState;
 import connectx.CXGameState;
 import connectx.CXPlayer;
-
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
@@ -14,6 +13,10 @@ public class Spycesar implements CXPlayer {
     private Random rand;
     private CXGameState myWin;
     private CXGameState yourWin;
+    private CXCellState spycesar;
+    CXCellState opponent;
+    private int playerScore;
+    private int  opponentScore;
     private int  TIMEOUT;
     private long START;
 
@@ -28,40 +31,54 @@ public class Spycesar implements CXPlayer {
         yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
         TIMEOUT = timeout_in_secs;
 
+        playerScore = 0;
+        opponentScore = 0;
+
     }
-// TODO: gestire out of bound
+
     @Override
     public int selectColumn(CXBoard B) {
 
         START = System.currentTimeMillis(); // Save starting time
 
+        spycesar = (B.numOfMarkedCells() %2 == 0) ? CXCellState.P1 : CXCellState.P2;
+        opponent = (B.numOfMarkedCells() %2 == 0) ? CXCellState.P2 : CXCellState.P1;
+        System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
+
         Integer[] L = B.getAvailableColumns();
-        int save    = L[rand.nextInt(L.length)]; // Save a random column
-
-
+        int save = L[rand.nextInt(L.length)];
 
         try {
 
-            // first move in the center column if is first
-            if (B.numOfMarkedCells() == 0){ return B.N / 2; }
+            System.out.println(B.numOfMarkedCells());
+            // first move in the center column if spycesar move first in the "1° round"
+            if (B.numOfMarkedCells() == 0) return B.N / 2;
+            // first move above the player or in the center column if spycesar move second in the "1° round"
+            if (B.numOfMarkedCells() == 1) return B.N / 2;
 
-            // first move above the player or in the center column if is second
-            if(B.numOfMarkedCells() == 1){
+            //TODO: verificare correttezza cond. in particolare se sarebbe più corretto togliere "spycesar == CXCellState.P2" dalla condizione.
+            if(B.numOfMarkedCells() < (B.X * 2) - 1){
+                if(spycesar == CXCellState.P2 && B.numOfMarkedCells() == (B.X * 2) - 3){
+                    return singleMoveBlock(B,L);
+                }
 
-                if(B.getLastMove().j == B.N / 2) return B.getLastMove().j;
-                else return B.N / 2;
+                // MINIMAX qua piu chiamare in singlemoveblock
+                return -1; // da togliere
             }
 
-            int col = singleMoveWin(B,L);
-            if(col != -1)
-                return col;
-            else
-                return singleMoveBlock(B,L);
+            else {
+
+                int col = singleMoveWin(B,L);
+                if(col != -1) return col;
+                else return singleMoveBlock(B,L);
+            }
+
         } catch (TimeoutException e) {
             System.err.println("Timeout!!! Random column selected");
             return save;
         }
     }
+
 
 
     private void checktime() throws TimeoutException {
@@ -74,7 +91,7 @@ public class Spycesar implements CXPlayer {
      *
      * Returns the winning column if there is one, otherwise -1
      */
-    //TODO: Cercare solo sulle colonne adiacenti e non su tutte le libere
+
     private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
         for(int i : L) {
             checktime(); // Check timeout at every iteration
@@ -93,6 +110,7 @@ public class Spycesar implements CXPlayer {
      *
      * Returns a blocking column if there is one, otherwise a random one
      */
+
     private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
         TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
 
@@ -105,7 +123,6 @@ public class Spycesar implements CXPlayer {
             boolean stop;
 
             for(j = 0, stop=false; j < L.length && !stop; j++) {
-                // TODO: capire riga sotto
                 //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
                 checktime();
                 if(!B.fullColumn(L[j])) {
@@ -120,6 +137,7 @@ public class Spycesar implements CXPlayer {
             B.unmarkColumn();
         }
 
+        //TODO : chiamare qui la func(). minimax
         if (T.size() > 0) {
             Integer[] X = T.toArray(new Integer[T.size()]);
             return X[rand.nextInt(X.length)];
@@ -129,9 +147,208 @@ public class Spycesar implements CXPlayer {
     }
 
 
+/*
+
+    // This is the minimax function. It considers all
+    // the possible ways the game can go and returns
+    // the value of the board
+    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long start) {
+
+        //eval function
+        int score = evaluate(B);
+        // If Maximizer has won the game
+        // return his/her evaluated score
+        if (score == 10) return score;
+            // If Minimizer has won the game
+            // return his/her evaluated score
+        else if (score == -10) return score;
+        // If there are no more moves and
+        // no winner then it is a tie
+        if (B.numOfFreeCells() == 0) return 0;
+
+        // If this maximizer's move
+        if (isMax) {
+            int eval = -1000; // -INFINITO
+            // Traverse all cells
+            for(int i = 0; i<B.M; i++)
+                for (int j = 0; j < B.N; j++) {
+                    if (B.cellState(i, j) == CXCellState.FREE) {
+                        B.markColumn(j);
+                        // Call minimax recursively and choose
+                        // the maximum value
+                        eval = Math.max(eval, minimax(B, depth + 1, !isMax, alpha, beta, start));
+                        if(eval > alpha)
+                            alpha = eval;
+                        // CHECK ALPHABETA PRUNING
+                        if (beta <= alpha)
+                            return beta;
+                        //break;
+                        B.unmarkColumn();
+                        //timeout
+                        if ((System.currentTimeMillis() - start) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+                    }
+                }
+
+            return eval;
+        }
+        else {
+            // If this minimizer>'s move
+            int eval = 1000; // +INFINITO
+            // Traverse all cells
+            for (int i = 0; i < B.M; i++) {
+                for (int j = 0; j < B.N; j++) {
+
+                    if (B.cellState(i, j) == CXCellState.FREE) {
+                        //B.cellState(i, j) = opponent;
+
+                        // Call minimax recursively and choose
+                        // the minimum value
+                        eval = Math.min(eval, minimax(B, depth + 1, !isMax, alpha, beta, start));
+                        if(eval < beta)
+                            beta = eval;
+                        // CHECK ALPHABETA PRUNING
+                        if (beta <= alpha)
+                            return beta;
+                        //break;
+                        //B.cellState(i, j) = CXCellState.FREE;
+                        //timeout
+                        if ((System.currentTimeMillis() - start) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+                    }
+                }
+            }
+            return eval;
+        }
+    }
+
+
+
+    //a function that calculates the value of
+    // the board depending on the placement of
+    // pieces on the board.
+
+    public int evaluate(CXBoard B) {
+
+        // Checking for Rows for X or O victory.
+        for (int row = 0; row < B.M; row++){
+            for(int col = 0; col < B.N; col++){
+
+                if(board[row][col] == spycesar) playerScore++;
+                else playerScore = 0;
+
+                if(playerScore == B.K) return +10;
+            }
+            for(int col = 0; col < B.N; col++){
+
+                if(board[row][col] == myOpponent) opponentScore++;
+                else opponentScore = 0;
+
+                if(opponentScore == B.K) return -10;
+            }
+        }
+        // Checking for Columns for X or O victory.
+        for (int col = 0; col < B.N; col++){
+            playerScore = 0;
+            opponentScore = 0;
+
+            for(int row = 0; row < B.M; row++){
+
+                if(board[row][col] == myPlayer) playerScore++;
+                else playerScore = 0;
+                if(playerScore == B.K) return +10;
+            }
+            for(int row = 0; row < B.M; row++){
+
+                if(board[row][col] == myOpponent) opponentScore++;
+                else opponentScore = 0;
+                if(opponentScore == B.K) return -10;
+            }
+        }
+
+        // Checking for Diagonals for X or O victory.
+
+        int count1;
+
+        for (int row = 0; row < B.M; row++){
+            for (int col = 0; col < B.N; col++){
+
+                playerScore = 0;
+                count1 = 0;
+
+                while(count1+col < B.N && count1+row < B.M){
+
+                    if (board[count1+row][count1+col] == myPlayer) playerScore++;
+                    else playerScore = 0;
+
+                    if(playerScore == B.K) return +10;
+
+                    count1++;
+                }
+            }
+            for (int col = 0; col < B.N; col++){
+
+                opponentScore = 0;
+                count1 = 0;
+
+                while(count1+col < B.N && count1+row < B.M){
+
+                    if (board[count1+row][count1+col] == myOpponent) opponentScore++;
+                    else opponentScore = 0;
+
+                    if(opponentScore == B.K) return -10;
+
+                    count1++;
+                }
+            }
+        }
+
+        int playerScoreInv = 0, opponentScoreInv = 0, count2 = 0;
+
+        // Checking for Diagonals for X or O victory.
+        for (int row = 0; row < B.M; row++){
+            for (int col = 0; col < B.N; col++){
+
+                playerScoreInv = 0;
+                count1 = B.N;
+                count2 = 0;
+
+                while(row + count2 < B.M && count1-col-1 > 0){
+
+                    if (board[count2+row][count1-col-1] == myPlayer) playerScoreInv++;
+                    else playerScoreInv = 0;
+
+                    if(playerScoreInv == B.K) return +10;
+
+                    count1--;
+                    count2++;
+                }
+            }
+            for (int col = 0; col < B.N; col++){
+
+                opponentScoreInv = 0;
+                count1 = B.N;
+                count2 = 0;
+
+                while(count2+row < B.M && count1-col-1 > 0){
+
+                    if (board[row + count2][count1-col-1] == myOpponent) opponentScoreInv++;
+                    else opponentScoreInv = 0;
+
+                    if(opponentScoreInv == B.K) return -10;
+
+                    count1--;
+                    count2++;
+                }
+            }
+        }
+        return 0;
+    }
+*/
+
+
     @Override
     public String playerName() {
 
         return "Spycesar";
     }
 }
+

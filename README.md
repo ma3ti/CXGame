@@ -21,6 +21,7 @@ If they put it somewhere else, take the cen ter column to gain the upper hand.
 
 ## GENERAL STRATEGY
 
-After the first move i'll try to follow my strategy.
-I first try to search a singole move win. if it doesn't good i'll try to search a single move block .
-if it doesn't work then i'll try to follow my minimax function
+After the first move i'll try to follow my guide-strategy.
+until noone can do a win (example if i must allign 6 marker to win and i've marked 6 times yet it is useless check 
+if i or my adv can win) runs a semi-random strategy.
+after k marker are on the table, i'll run my minimax strategy with singlemovewin and singlemoveblock

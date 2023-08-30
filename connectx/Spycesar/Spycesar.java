@@ -1,9 +1,8 @@
 package connectx.Spycesar;
 
-import connectx.CXBoard;
-import connectx.CXCellState;
-import connectx.CXGameState;
-import connectx.CXPlayer;
+import connectx.*;
+
+import java.util.Arrays;
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
@@ -40,30 +39,32 @@ public class Spycesar implements CXPlayer {
     public int selectColumn(CXBoard B) {
 
         START = System.currentTimeMillis(); // Save starting time
-
         spycesar = (B.numOfMarkedCells() %2 == 0) ? CXCellState.P1 : CXCellState.P2;
         opponent = (B.numOfMarkedCells() %2 == 0) ? CXCellState.P2 : CXCellState.P1;
-        System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
+        //System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
 
         Integer[] L = B.getAvailableColumns();
         int save = L[rand.nextInt(L.length)];
 
+        CXCell a = B.getLastMove();
+        System.out.println(a.i +" "+ a.j +" "+                      a.state);
+
         try {
 
-            System.out.println(B.numOfMarkedCells());
-            // first move in the center column if spycesar move first in the "1° round"
-            if (B.numOfMarkedCells() == 0) return B.N / 2;
-            // first move above the player or in the center column if spycesar move second in the "1° round"
-            if (B.numOfMarkedCells() == 1) return B.N / 2;
+            // Logica semi-random per le prime k mosse
+            if(B.numOfMarkedCells() < (B.X * 2) - 2){
 
-            //TODO: verificare correttezza cond. in particolare se sarebbe più corretto togliere "spycesar == CXCellState.P2" dalla condizione.
-            if(B.numOfMarkedCells() < (B.X * 2) - 1){
-                if(spycesar == CXCellState.P2 && B.numOfMarkedCells() == (B.X * 2) - 3){
-                    return singleMoveBlock(B,L);
-                }
+                if(B.numOfMarkedCells() == (B.X * 2) - 3) return singleMoveBlock(B,L);
 
-                // MINIMAX qua piu chiamare in singlemoveblock
-                return -1; // da togliere
+                // first move in the center column if spycesar move first in the "1° round"
+                // first move above the player or in the center column if spycesar move second in the "1° round"
+                if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) return B.N / 2;
+
+
+
+
+                //definire una logica semirandom per le restanti prime k - 1 mosse
+                return save     ; // da togliere
             }
 
             else {

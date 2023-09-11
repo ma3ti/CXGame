@@ -107,7 +107,7 @@ public class L1 implements CXPlayer {
    * Returns a blocking column if there is one, otherwise a random one
    */
 	private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
-		TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
+					TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
 
 		for(int i : L) {
 			checktime();
@@ -140,7 +140,10 @@ public class L1 implements CXPlayer {
 		}
 	}
 
+
+
 	public String playerName() {
+
 		return "L1";
 	}
 }

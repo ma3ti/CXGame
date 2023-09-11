@@ -47,32 +47,27 @@ public class Spycesar implements CXPlayer {
         int save = L[rand.nextInt(L.length)];
 
         CXCell a = B.getLastMove();
-        System.out.println(a.i +" "+ a.j +" "+                      a.state);
+        //System.out.println(a.i +" "+ a.j +" "+                      a.state);
 
         try {
 
-            // Logica semi-random per le prime k mosse
-            if(B.numOfMarkedCells() < (B.X * 2) - 2){
+                // Logica semi-random per le prime k mosse
+                // B.X >= 4
+                if (B.numOfMarkedCells() < (B.X * 2) - 2) {
 
-                if(B.numOfMarkedCells() == (B.X * 2) - 3) return singleMoveBlock(B,L);
+                    // first move in the center column if spycesar move first in the "1° round"
+                    // first move above the player or in the center column if spycesar move second in the "1° round"
+                    if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) return B.N / 2;
 
-                // first move in the center column if spycesar move first in the "1° round"
-                // first move above the player or in the center column if spycesar move second in the "1° round"
-                if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) return B.N / 2;
+                    //definire una logica semirandom per le restanti prime k - 1 mosse
+                    else return save; // da togliere
+                } else {
 
+                    int col = singleMoveWin(B, L);
+                    if (col != -1) return col;
+                    else return singleMoveBlock(B, L);
+                }
 
-
-
-                //definire una logica semirandom per le restanti prime k - 1 mosse
-                return save     ; // da togliere
-            }
-
-            else {
-
-                int col = singleMoveWin(B,L);
-                if(col != -1) return col;
-                else return singleMoveBlock(B,L);
-            }
 
         } catch (TimeoutException e) {
             System.err.println("Timeout!!! Random column selected");
@@ -97,21 +92,41 @@ public class Spycesar implements CXPlayer {
         for(int i : L) {
             checktime(); // Check timeout at every iteration
             CXGameState state = B.markColumn(i);
-            if (state == myWin)
+            if (state == myWin) {
+                System.out.println("colonna vincente : " + i);
                 return i; // Winning column found: return immediately
+            }
             B.unmarkColumn();
         }
+        System.out.println("colonna vincente non trovata. vado a SingleMoveBlock() ");
         return -1;
     }
 
+/*
+    private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
 
+        for(int i : L) {
+            checktime(); // Check timeout at every iteration
+            CXGameState state = B.markColumn(i);
+            if (state == yourWin) {
+                System.out.println("colonna perdente : " + i);
+                B.unmarkColumn();
+                return i; // Winning column found: return immediately
+            }
+            B.unmarkColumn();
+        }
+        System.out.println("colonna perdente non trovata. mossa random   ");
+        return L[rand.nextInt(L.length)];
+
+    }
+*/
 
     /**
      * Check if we can block adversary's victory
      *
      * Returns a blocking column if there is one, otherwise a random one
      */
-
+//TODO: Fare log della funzione singleMoveBlock per vedere dove non trova la mossa bloccante
     private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
         TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
 
@@ -127,7 +142,7 @@ public class Spycesar implements CXPlayer {
                 //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
                 checktime();
                 if(!B.fullColumn(L[j])) {
-                    CXGameState state = B.markColumn(L[j]);
+                    CXGameState state = B.markColumn2(L[j]);
                     if (state == yourWin) {
                         T.remove(i); // We ignore the i-th column as a possible move
                         stop = true; // We don't need to check more

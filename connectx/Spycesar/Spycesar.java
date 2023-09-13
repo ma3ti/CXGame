@@ -19,6 +19,8 @@ public class Spycesar implements CXPlayer {
     private int  TIMEOUT;
     private long START;
 
+    protected CXCellState[][] board;
+
     // CONSTRUCTOR
     public Spycesar(){}
 
@@ -43,10 +45,11 @@ public class Spycesar implements CXPlayer {
         opponent = (B.numOfMarkedCells() %2 == 0) ? CXCellState.P2 : CXCellState.P1;
         //System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
 
+
         Integer[] L = B.getAvailableColumns();
         int save = L[rand.nextInt(L.length)];
 
-        CXCell a = B.getLastMove();
+        //CXCell a = B.getLastMove();
         //System.out.println(a.i +" "+ a.j +" "+                      a.state);
 
         try {
@@ -109,14 +112,10 @@ public class Spycesar implements CXPlayer {
      *
      * Returns a blocking column if there is one, otherwise a random one
      */
-//TODO: Fare log della funzione singleMoveBlock per vedere dove non trova la mossa bloccante
     private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
         TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
 
-        //int i;
-        //boolean stop2;
         for(int i : L) {
-        //for(i = 0, stop2=false; i < L.length && !stop2; i++) {
             checktime();
             T.add(i); // We consider column i as a possible move
             B.markColumn(i);
@@ -133,13 +132,6 @@ public class Spycesar implements CXPlayer {
                         T.remove(i); // We ignore the i-th column as a possible move
                         stop = true; // We don't need to check more
                         System.out.println("SingleMoveBlock trovato, colonna : " + i + " e mossa adv in " + L[j]);
-                    /*
-                        if(i != L[j]){
-                            System.out.println("retrun L[j] = " + L[j]);
-                            return L[j];
-                        }
-                    */
-
                     }
                     B.unmarkColumn();
                 }
@@ -163,7 +155,7 @@ public class Spycesar implements CXPlayer {
     }
 
 
-/*
+
 
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
@@ -171,28 +163,40 @@ public class Spycesar implements CXPlayer {
     public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long start) {
 
         //eval function
-        int score = evaluate(B);
+        //int score = evaluate(B);
         // If Maximizer has won the game
         // return his/her evaluated score
-        if (score == 10) return score;
+        //if (score == 10) return score;
             // If Minimizer has won the game
             // return his/her evaluated score
-        else if (score == -10) return score;
+        //else if (score == -10) return score;
         // If there are no more moves and
         // no winner then it is a tie
-        if (B.numOfFreeCells() == 0) return 0;
+        //if (B.numOfFreeCells() == 0) return 0;
+
+        if (depth == 0){
+
+
+        }
+
+        Integer[] L = B.getAvailableColumns();
+
 
         // If this maximizer's move
         if (isMax) {
             int eval = -1000; // -INFINITO
             // Traverse all cells
-            for(int i = 0; i<B.M; i++)
-                for (int j = 0; j < B.N; j++) {
+            //for(int i = 0; i<B.M; i++)
+                //for (int j = 0; j < B.N; j++) {
+
+              //TODO: cambiare condizione ciclo in modo da usare solo indici colonne e non indici(riga, colonna) e ristudiare minimax
+              for(int i : L) {
+
                     if (B.cellState(i, j) == CXCellState.FREE) {
                         B.markColumn(j);
                         // Call minimax recursively and choose
                         // the maximum value
-                        eval = Math.max(eval, minimax(B, depth + 1, !isMax, alpha, beta, start));
+                        eval = Math.max(eval, minimax(B, depth - 1, !isMax, alpha, beta, start));
                         if(eval > alpha)
                             alpha = eval;
                         // CHECK ALPHABETA PRUNING
@@ -219,7 +223,7 @@ public class Spycesar implements CXPlayer {
 
                         // Call minimax recursively and choose
                         // the minimum value
-                        eval = Math.min(eval, minimax(B, depth + 1, !isMax, alpha, beta, start));
+                        eval = Math.min(eval, minimax(B, depth - 1, !isMax, alpha, beta, start));
                         if(eval < beta)
                             beta = eval;
                         // CHECK ALPHABETA PRUNING
@@ -244,6 +248,8 @@ public class Spycesar implements CXPlayer {
 
     public int evaluate(CXBoard B) {
 
+        board = new CXCellState[B.M][B.N];
+
         // Checking for Rows for X or O victory.
         for (int row = 0; row < B.M; row++){
             for(int col = 0; col < B.N; col++){
@@ -251,14 +257,14 @@ public class Spycesar implements CXPlayer {
                 if(board[row][col] == spycesar) playerScore++;
                 else playerScore = 0;
 
-                if(playerScore == B.K) return +10;
+                if(playerScore == B.X) return (B.numOfFreeCells() + 1);
             }
             for(int col = 0; col < B.N; col++){
 
-                if(board[row][col] == myOpponent) opponentScore++;
+                if(board[row][col] == opponent) opponentScore++;
                 else opponentScore = 0;
 
-                if(opponentScore == B.K) return -10;
+                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
             }
         }
         // Checking for Columns for X or O victory.
@@ -268,15 +274,15 @@ public class Spycesar implements CXPlayer {
 
             for(int row = 0; row < B.M; row++){
 
-                if(board[row][col] == myPlayer) playerScore++;
+                if(board[row][col] == spycesar) playerScore++;
                 else playerScore = 0;
-                if(playerScore == B.K) return +10;
+                if(playerScore == B.X) return (B.numOfFreeCells() + 1);
             }
             for(int row = 0; row < B.M; row++){
 
-                if(board[row][col] == myOpponent) opponentScore++;
+                if(board[row][col] == opponent) opponentScore++;
                 else opponentScore = 0;
-                if(opponentScore == B.K) return -10;
+                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
             }
         }
 
@@ -292,10 +298,10 @@ public class Spycesar implements CXPlayer {
 
                 while(count1+col < B.N && count1+row < B.M){
 
-                    if (board[count1+row][count1+col] == myPlayer) playerScore++;
+                    if (board[count1+row][count1+col] == spycesar) playerScore++;
                     else playerScore = 0;
 
-                    if(playerScore == B.K) return +10;
+                    if(playerScore == B.X) return (B.numOfFreeCells() + 1);
 
                     count1++;
                 }
@@ -307,10 +313,10 @@ public class Spycesar implements CXPlayer {
 
                 while(count1+col < B.N && count1+row < B.M){
 
-                    if (board[count1+row][count1+col] == myOpponent) opponentScore++;
+                    if (board[count1+row][count1+col] == opponent) opponentScore++;
                     else opponentScore = 0;
 
-                    if(opponentScore == B.K) return -10;
+                    if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
 
                     count1++;
                 }
@@ -329,10 +335,10 @@ public class Spycesar implements CXPlayer {
 
                 while(row + count2 < B.M && count1-col-1 > 0){
 
-                    if (board[count2+row][count1-col-1] == myPlayer) playerScoreInv++;
+                    if (board[count2+row][count1-col-1] == spycesar) playerScoreInv++;
                     else playerScoreInv = 0;
 
-                    if(playerScoreInv == B.K) return +10;
+                    if(playerScoreInv == B.X) return (B.numOfFreeCells() + 1);
 
                     count1--;
                     count2++;
@@ -346,10 +352,10 @@ public class Spycesar implements CXPlayer {
 
                 while(count2+row < B.M && count1-col-1 > 0){
 
-                    if (board[row + count2][count1-col-1] == myOpponent) opponentScoreInv++;
+                    if (board[row + count2][count1-col-1] == opponent) opponentScoreInv++;
                     else opponentScoreInv = 0;
 
-                    if(opponentScoreInv == B.K) return -10;
+                    if(opponentScoreInv == B.X) return (((-1) * B.numOfFreeCells()) + 1);
 
                     count1--;
                     count2++;
@@ -358,7 +364,7 @@ public class Spycesar implements CXPlayer {
         }
         return 0;
     }
-*/
+
 
 
     @Override

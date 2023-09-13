@@ -28,3 +28,10 @@ after k marker are on the table, i'll run my minimax strategy with singlemovewin
 
 in pratica cerco una logica semi-random fino a quando io o il mio adv non abbiamo k-1 simboli in gioco.
 al k-1 simbolo in gioco entrano le funzioni singoleMoveWIn/Block + il minimax 
+
+All'algoritmo single moveBlock ho aggiunto una condizione if(i != j) per bloccare anche tutte le mosse con k-1 
+simboli gia allineati, mettendo un mio simbolo direttamento sul k-esimo in fila.
+Perchè singleMoveBlock prima funzionava che per ogni mia colonna che potevo scegliere, piazzava un marker adv 
+in ogni colonna per verificare che con la mia mossa non sbloccasse la possibilita al mio adv di infilare il k-esimo marker,
+ritornando cosi tutte le colonne che non avessere ritornato un vantaggio all'avversario.
+con l'aggiunta di if(i != j) blocco direttamente la sequenza di k-1 simboli adv.

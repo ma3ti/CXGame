@@ -13,8 +13,8 @@ public class Spycesar implements CXPlayer {
     private CXGameState myWin;
     private CXGameState yourWin;
     private CXCellState spycesar;
-    CXCellState opponent;
-    private int playerScore;
+    private CXCellState opponent;
+    private int  playerScore;
     private int  opponentScore;
     private int  TIMEOUT;
     private long START;
@@ -53,7 +53,7 @@ public class Spycesar implements CXPlayer {
 
                 // Logica semi-random per le prime k mosse
                 // B.X >= 4
-                if (B.numOfMarkedCells() < (B.X * 2) - 2) {
+                if (B.numOfMarkedCells() < (B.X * 2) - 3) {
 
                     // first move in the center column if spycesar move first in the "1° round"
                     // first move above the player or in the center column if spycesar move second in the "1° round"
@@ -102,24 +102,7 @@ public class Spycesar implements CXPlayer {
         return -1;
     }
 
-/*
-    private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
 
-        for(int i : L) {
-            checktime(); // Check timeout at every iteration
-            CXGameState state = B.markColumn(i);
-            if (state == yourWin) {
-                System.out.println("colonna perdente : " + i);
-                B.unmarkColumn();
-                return i; // Winning column found: return immediately
-            }
-            B.unmarkColumn();
-        }
-        System.out.println("colonna perdente non trovata. mossa random   ");
-        return L[rand.nextInt(L.length)];
-
-    }
-*/
 
     /**
      * Check if we can block adversary's victory
@@ -130,7 +113,10 @@ public class Spycesar implements CXPlayer {
     private int singleMoveBlock(CXBoard B, Integer[] L) throws TimeoutException {
         TreeSet<Integer> T = new TreeSet<Integer>(); // We collect here safe column indexes
 
+        //int i;
+        //boolean stop2;
         for(int i : L) {
+        //for(i = 0, stop2=false; i < L.length && !stop2; i++) {
             checktime();
             T.add(i); // We consider column i as a possible move
             B.markColumn(i);
@@ -142,22 +128,36 @@ public class Spycesar implements CXPlayer {
                 //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
                 checktime();
                 if(!B.fullColumn(L[j])) {
-                    CXGameState state = B.markColumn2(L[j]);
+                    CXGameState state = B.markColumn(L[j]);
                     if (state == yourWin) {
                         T.remove(i); // We ignore the i-th column as a possible move
                         stop = true; // We don't need to check more
+                        System.out.println("SingleMoveBlock trovato, colonna : " + i + " e mossa adv in " + L[j]);
+                    /*
+                        if(i != L[j]){
+                            System.out.println("retrun L[j] = " + L[j]);
+                            return L[j];
+                        }
+                    */
+
                     }
-                    B.unmarkColumn(); //
+                    B.unmarkColumn();
                 }
             }
             B.unmarkColumn();
+            System.out.println("SingleMoveBlock non trovato per colonna "+ i);
+
         }
 
         //TODO : chiamare qui la func(). minimax
         if (T.size() > 0) {
+
             Integer[] X = T.toArray(new Integer[T.size()]);
-            return X[rand.nextInt(X.length)];
+            int p = rand.nextInt(X.length);
+            System.out.println("T.size() > 0 : " + p);
+            return X[p];
         } else {
+            System.out.println("Else random");
             return L[rand.nextInt(L.length)];
         }
     }

@@ -47,6 +47,7 @@ public class Spycesar implements CXPlayer {
 
 
         Integer[] L = B.getAvailableColumns();
+        //TODO: riprovare sto ciclo che va in outof Bound Array con singlemoveBlock and Win
        /* System.out.println("Colonne disponibili : ");
         for(int i: L){
 

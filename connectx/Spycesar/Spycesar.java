@@ -18,8 +18,8 @@ public class Spycesar implements CXPlayer {
     private int  opponentScore;
     private int  TIMEOUT;
     private long START;
-
-    protected CXCellState[][] board;
+    private int max = 1;
+    private int min = -1;
 
     // CONSTRUCTOR
     public Spycesar(){}
@@ -66,13 +66,19 @@ public class Spycesar implements CXPlayer {
                     else return save; // da togliere
                 } else {
 
+
                     int col = singleMoveWin(B, L);
                     if (col != -1) return col;
                     else return singleMoveBlock(B, L);
+
+                    //return minimax()
+
+
                 }
 
 
         } catch (TimeoutException e) {
+
             System.err.println("Timeout!!! Random column selected");
             return save;
         }
@@ -141,7 +147,7 @@ public class Spycesar implements CXPlayer {
 
         }
 
-        //TODO : chiamare qui la func(). minimax
+        //TODO : capire dove chiamare la func(). minimax
         if (T.size() > 0) {
 
             Integer[] X = T.toArray(new Integer[T.size()]);
@@ -160,24 +166,20 @@ public class Spycesar implements CXPlayer {
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
-    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long start) {
+    //TODO: comntrollare la funzione soprattutto le prime righe
+    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) {
 
         //eval function
-        //int score = evaluate(B);
+        int score = evaluate(B);
         // If Maximizer has won the game
         // return his/her evaluated score
-        //if (score == 10) return score;
+        if (score == B.numOfFreeCells() + 1) return score;
             // If Minimizer has won the game
             // return his/her evaluated score
-        //else if (score == -10) return score;
+        else if (score == (-1) * (B.numOfFreeCells() +1))  return score;
         // If there are no more moves and
         // no winner then it is a tie
-        //if (B.numOfFreeCells() == 0) return 0;
-
-        if (depth == 0){
-
-
-        }
+        if (B.numOfFreeCells() == 0) return 0;
 
         Integer[] L = B.getAvailableColumns();
 
@@ -185,70 +187,86 @@ public class Spycesar implements CXPlayer {
         // If this maximizer's move
         if (isMax) {
             int eval = -1000; // -INFINITO
-            // Traverse all cells
-            //for(int i = 0; i<B.M; i++)
-                //for (int j = 0; j < B.N; j++) {
-
-              //TODO: cambiare condizione ciclo in modo da usare solo indici colonne e non indici(riga, colonna) e ristudiare minimax
+            // Traverse all columns
               for(int i : L) {
-
-                    if (B.cellState(i, j) == CXCellState.FREE) {
-                        B.markColumn(j);
+                  if(!B.fullColumn(L[i])){
+                        B.markColumn(i);
                         // Call minimax recursively and choose
                         // the maximum value
-                        eval = Math.max(eval, minimax(B, depth - 1, !isMax, alpha, beta, start));
-                        if(eval > alpha)
-                            alpha = eval;
+                        eval = Math.max(eval, minimax(B, depth - 1, !isMax, alpha, beta, this.START));
+
+                        alpha = Math.max(eval, alpha);
                         // CHECK ALPHABETA PRUNING
+                      //TODO: controllare return
                         if (beta <= alpha)
                             return beta;
                         //break;
                         B.unmarkColumn();
                         //timeout
-                        if ((System.currentTimeMillis() - start) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
-                    }
-                }
-
+                        if ((System.currentTimeMillis() - this.START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+                  }
+              }
             return eval;
         }
         else {
             // If this minimizer>'s move
             int eval = 1000; // +INFINITO
             // Traverse all cells
-            for (int i = 0; i < B.M; i++) {
-                for (int j = 0; j < B.N; j++) {
-
-                    if (B.cellState(i, j) == CXCellState.FREE) {
-                        //B.cellState(i, j) = opponent;
-
+            for(int i : L) {
+                    if(!B.fullColumn(L[i])){
+                        B.markColumn(i);
                         // Call minimax recursively and choose
                         // the minimum value
-                        eval = Math.min(eval, minimax(B, depth - 1, !isMax, alpha, beta, start));
-                        if(eval < beta)
-                            beta = eval;
+                        eval = Math.min(eval, minimax(B, depth - 1, !isMax, alpha, beta, START));
+
+                        beta = Math.min(eval, beta);
                         // CHECK ALPHABETA PRUNING
+                        //TODO: controllare return
                         if (beta <= alpha)
                             return beta;
                         //break;
-                        //B.cellState(i, j) = CXCellState.FREE;
+                        B.unmarkColumn();
                         //timeout
-                        if ((System.currentTimeMillis() - start) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+                        if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
                     }
-                }
             }
             return eval;
         }
     }
 
+//TODO: testare con i log anche
+    public int bestMove(CXBoard B){
+
+        Integer[] L = B.getAvailableColumns();
+
+        int bestScore = -1000;
+        int bestMove = 0;
+
+
+        for(int i : L){
+            //if(!B.fullColumn(L[i])){
+                B.markColumn(i);
+                int score = minimax(B,0, true, max, min, START);
+                B.unmarkColumn();
+                if(score > bestScore){
+                    bestScore = score;
+                    bestMove = L[i];
+                }
+            //}
+        }
+        return bestMove;
+    }
 
 
     //a function that calculates the value of
     // the board depending on the placement of
     // pieces on the board.
 
+    //TODO: controllare board = new CXCellState ... probabilmente gli sto passando un oggetto vuoto
     public int evaluate(CXBoard B) {
 
-        board = new CXCellState[B.M][B.N];
+        //board = new CXCellState[B.M][B.N];
+        CXCellState[][] board = B.getBoard();
 
         // Checking for Rows for X or O victory.
         for (int row = 0; row < B.M; row++){

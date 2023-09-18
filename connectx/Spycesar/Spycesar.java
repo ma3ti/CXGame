@@ -18,8 +18,9 @@ public class Spycesar implements CXPlayer {
     private int  opponentScore;
     private int  TIMEOUT;
     private long START;
-    private int max = 1;
-    private int min = -1;
+    private int alpha = 1;
+    private int beta = -1;
+
 
     // CONSTRUCTOR
     public Spycesar(){}
@@ -47,13 +48,6 @@ public class Spycesar implements CXPlayer {
 
 
         Integer[] L = B.getAvailableColumns();
-        //TODO: riprovare sto ciclo che va in outof Bound Array con singlemoveBlock and Win
-       /* System.out.println("Colonne disponibili : ");
-        for(int i: L){
-
-            System.out.println(L[i]);
-        }
-*/
         int save = L[rand.nextInt(L.length)];
 
         try {
@@ -173,71 +167,50 @@ public class Spycesar implements CXPlayer {
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
-    //TODO: controllare la funzione soprattutto le prime righe, capire come impostare depth e fare evaluate sui nodi foglia
+    //TODO: sistemare minimax, implementare alpha-beta pruning, controllare la funzione soprattutto le prime righe, capire come impostare depth
     public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) {
 
-        System.out.println("arrivato a minimax");
-        //eval function
         int score = evaluate(B);
-
-        System.out.println("score = " +score);
-        // If Maximizer has won the game
-        // return his/her evaluated score
-        //if (score > 0) return score;
-            // If Minimizer has won the game
-            // return his/her evaluated score
-        //else if (score < 0)  return score;
-        // If there are no more moves and
-        // no winner then it is a tie
-        if (B.numOfFreeCells() == 0) return score;
-
+        if (score != 0) return score;
+        //if (B.numOfFreeCells() == 0) return score;
         Integer[] L = B.getAvailableColumns();
 
         // If this maximizer's move
         if (isMax) {
             int eval = -1000; // -INFINITO
-
-            // Traverse all columns
             for(int i : L) {
-               if(!B.fullColumn(L[i])){
-                B.markColumn(i);
-                // Call minimax recursively and choose
-                // the maximum value
-                eval = Math.max(eval, minimax(B, depth - 1, !isMax, alpha, beta, this.START));
-
-                // alpha = Math.max(eval, alpha);
-                // CHECK ALPHABETA PRUNING
-                //TODO: controllare return
-                //if (beta <= alpha)
-                //return beta;
-                //break;
-                B.unmarkColumn();
-                //timeout
-                if ((System.currentTimeMillis() - this.START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+               if(!B.fullColumn(i)){
+                   B.markColumn(i);
+                   eval = Math.max(eval, 
+                           minimax(B, depth - 1, !isMax, alpha, beta, this.START));
+                   alpha = Math.max(eval, alpha);
+                   // CHECK ALPHABETA PRUNING
+                   //TODO: controllare return
+                   //if (beta <= alpha) break;
+                   //return beta;
+                   B.unmarkColumn();
+                   //timeout
+                   if ((System.currentTimeMillis() - this.START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
               }
             }
             return eval;
         }
         else {
             // If this minimizer>'s move
-            int eval = 1000; // +INFINITO
-            // Traverse all cells
+            int eval = 1000;
             for(int i : L) {
-                    if(!B.fullColumn(L[i])){
-                        B.markColumn(L[i]);
-                        // Call minimax recursively and choose
-                        // the minimum value
-                        eval = Math.min(eval, minimax(B, depth - 1, !isMax, alpha, beta, START));
-
-                        //beta = Math.min(eval, beta);
-                        // CHECK ALPHABETA PRUNING
-                        //TODO: controllare return
-                        //if (beta <= alpha)
-                          //  return beta;
-                        //break;
-                        B.unmarkColumn();
-                        //timeout
-                        if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
+                if(!B.fullColumn(i)){
+                    B.markColumn(i);
+                    eval = Math.min(eval,
+                             minimax(B, depth - 1, !isMax, alpha, beta, START));
+                    beta = Math.min(eval, beta);
+                    // CHECK ALPHABETA PRUNING
+                    //TODO: controllare return
+                    //if (beta <= alpha) break;
+                    //return beta;
+                    B.unmarkColumn();
+                    //timeout
+                    if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)) break;
                     }
             }
             return eval;
@@ -246,7 +219,6 @@ public class Spycesar implements CXPlayer {
 
 
 
-//TODO: problema di Array.outOfBound, il problema sta nei cicli del minimax e controllare findBestmove
     public int findBestMove(CXBoard B) throws TimeoutException{
 
         System.out.println("arrivato a findbestMove");
@@ -255,14 +227,15 @@ public class Spycesar implements CXPlayer {
         int bestMove = 0;
 
         for(int i : L){
-            if(!B.fullColumn(L[i])){
+            if(!B.fullColumn(i)){
                 //System.out.println(L[i]);
                 B.markColumn(i);
-                int score = minimax(B,0, true, max, min, START);
+                int score = minimax(B,0, true, alpha, beta, START);
                 B.unmarkColumn();
                 if(score > bestScore){
                     bestScore = score;
-                    bestMove = L[i];
+                    bestMove = i;
+                    System.out.println("BestScore = " + bestScore);
                 }
             }
         }
@@ -294,7 +267,7 @@ public class Spycesar implements CXPlayer {
                 if(board[row][col] == opponent) opponentScore++;
                 else opponentScore = 0;
 
-                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
+                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) - 1);
             }
         }
         // Checking for Columns for X or O victory.
@@ -312,7 +285,7 @@ public class Spycesar implements CXPlayer {
 
                 if(board[row][col] == opponent) opponentScore++;
                 else opponentScore = 0;
-                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
+                if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) - 1);
             }
         }
 
@@ -346,7 +319,7 @@ public class Spycesar implements CXPlayer {
                     if (board[count1+row][count1+col] == opponent) opponentScore++;
                     else opponentScore = 0;
 
-                    if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) + 1);
+                    if(opponentScore == B.X) return (((-1) * B.numOfFreeCells()) - 1);
 
                     count1++;
                 }
@@ -385,7 +358,7 @@ public class Spycesar implements CXPlayer {
                     if (board[row + count2][count1-col-1] == opponent) opponentScoreInv++;
                     else opponentScoreInv = 0;
 
-                    if(opponentScoreInv == B.X) return (((-1) * B.numOfFreeCells()) + 1);
+                    if(opponentScoreInv == B.X) return (((-1) * B.numOfFreeCells()) - 1);
 
                     count1--;
                     count2++;

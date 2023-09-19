@@ -170,20 +170,27 @@ public class Spycesar implements CXPlayer {
     //TODO: sistemare minimax, implementare alpha-beta pruning, controllare la funzione soprattutto le prime righe, capire come impostare depth
     public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) {
 
+        System.err.println("Arrivato a minimax");
         int score = evaluate(B);
-        if (score != 0) return score;
+        System.err.println("Score = " + score);
+        if (score != 0 || B.numOfFreeCells() == 0) return score;
         //if (B.numOfFreeCells() == 0) return score;
         Integer[] L = B.getAvailableColumns();
 
         // If this maximizer's move
         if (isMax) {
+            System.out.println("IsMax");
             int eval = -1000; // -INFINITO
             for(int i : L) {
+                System.err.println("IsMax1");
                if(!B.fullColumn(i)){
+                   System.err.println("IsMax2, col " + i);
+
                    B.markColumn(i);
+                   System.err.println("MarkColumn " + i);
                    eval = Math.max(eval, 
                            minimax(B, depth - 1, !isMax, alpha, beta, this.START));
-                   alpha = Math.max(eval, alpha);
+                   //alpha = Math.max(eval, alpha);
                    // CHECK ALPHABETA PRUNING
                    //TODO: controllare return
                    //if (beta <= alpha) break;
@@ -198,12 +205,16 @@ public class Spycesar implements CXPlayer {
         else {
             // If this minimizer>'s move
             int eval = 1000;
+            System.err.println("IsMin");
             for(int i : L) {
+                System.err.println("IsMin1");
                 if(!B.fullColumn(i)){
+                    System.err.println("ISMin2, col " + i);
                     B.markColumn(i);
+                    System.err.println("MarkColumn " + i);
                     eval = Math.min(eval,
                              minimax(B, depth - 1, !isMax, alpha, beta, START));
-                    beta = Math.min(eval, beta);
+                    //beta = Math.min(eval, beta);
                     // CHECK ALPHABETA PRUNING
                     //TODO: controllare return
                     //if (beta <= alpha) break;

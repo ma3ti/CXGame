@@ -90,7 +90,7 @@ public class L1 implements CXPlayer {
 	 *
 	 * Returns the winning column if there is one, otherwise -1
 	 */	
-	private int singleMoveWin(CXBoard B, Integer[] L	) throws TimeoutException {
+	private int singleMoveWin(CXBoard B, Integer[] L) throws TimeoutException {
     for(int i : L) {
 	  checktime(); // Check timeout at every iteration
       CXGameState state = B.markColumn(i);
@@ -118,7 +118,7 @@ public class L1 implements CXPlayer {
 			boolean stop;
 
 			for(j = 0, stop=false; j < L.length && !stop; j++) {
-				//	try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
+					//try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
 				checktime();
 				if(!B.fullColumn(L[j])) {
 					CXGameState state = B.markColumn(L[j]);

@@ -42,10 +42,6 @@ public class Spycesar implements CXPlayer {
         //System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
 
 
-        Integer[] L = B.getAvailableColumns();
-        int save = L[rand.nextInt(L.length)];
-
-        try {
 
                 // Logica semi-random per le prime k mosse
                 // B.X >= 4
@@ -71,23 +67,15 @@ public class Spycesar implements CXPlayer {
                     System.out.println("else");
 
                     return findBestMove(B);
-
-
-
-
-
-        } catch (TimeoutException e) {
-
-            System.err.println("Timeout!!! Random column selected");
-            return save;
-        }
     }
 
 
 
     private void checktime() throws TimeoutException {
-        if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0))
+        if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0)) {
+            System.err.println("Timeout Exception");
             throw new TimeoutException();
+        }
     }
 
     /**
@@ -165,9 +153,10 @@ public class Spycesar implements CXPlayer {
     // the possible ways the game can go and returns
     // the value of the board
     //TODO: sistemare minimax, implementare alpha-beta pruning, controllare la funzione soprattutto le prime righe, capire come impostare depth
-    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) {
+    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) throws TimeoutException {
 
         System.err.println("------- Arrivato a minimax -------");
+        checktime();
         System.err.println(B.gameState());
         int score = evaluate(B);
 
@@ -200,16 +189,17 @@ public class Spycesar implements CXPlayer {
                        //return beta;
                    B.unmarkColumn();
                    //timeout
-                   if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)){
+                   /*if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)){
 
                        System.err.println("BREAK");
                        break;
-                   }                }
+                   }  */
+               }
             }
             return eval;
         }
         else {
-            // If this minimizer>'s move
+            // If this minimizer's move
             int eval = 1000;
             System.err.println("IsMin");
             for(int i : L) {
@@ -227,12 +217,12 @@ public class Spycesar implements CXPlayer {
                         // return beta;
                     B.unmarkColumn();
                     //timeout
-                    if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)){
+                   /* if ((System.currentTimeMillis() - START) / 1000.0 > TIMEOUT * (99.0 / 100.0)){
 
                         System.err.println("BREAK");
                         break;
-                    }
-                    }
+                    }*/
+                }
             }
             return eval;
         }
@@ -240,40 +230,54 @@ public class Spycesar implements CXPlayer {
 
 
 
-    public int findBestMove(CXBoard B) throws TimeoutException{
+    public int findBestMove(CXBoard B){
 
-        System.out.println("arrivato a findbestMove");
         Integer[] L = B.getAvailableColumns();
+        int save = L[rand.nextInt(L.length)];
 
-        int bestScore = -1000;
-        int bestMove = 0;
-        int j = 0;
-        Integer[]a = {0,0,0,0,0,0};
-        Integer[]b = {0,0,0,0,0,0};
+        try {
 
 
-        for(int i : L){
-            if(!B.fullColumn(i)){
+            System.out.println("arrivato a findbestMove");
 
-                B.markColumn(i);
-                int score = minimax(B,0, true, alpha, beta, START);
-                System.err.println("------------------------------------------------------- SCORE COLONNA " + i + " = " + score);
-                B.unmarkColumn();
-                a[j] = score;
-                b[j] = i;
-                j++;
-                if(score > bestScore){
-                    bestScore = score;
-                    bestMove = i;
+            int bestScore = -1000;
+            int bestMove = 0;
+            int j = 0;
+            Integer[] a = {0, 0, 0, 0, 0, 0};
+            Integer[] b = {0, 0, 0, 0, 0, 0};
+
+
+            for (int i : L) {
+                if (!B.fullColumn(i)) {
+
+                    //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
+
+                    checktime();
+                    B.markColumn(i);
+                    int score = minimax(B, 0, true, alpha, beta, START);
+                    System.err.println("------------------------------------------------------- SCORE COLONNA " + i + " = " + score);
+                    B.unmarkColumn();
+                    a[j] = score;
+                    b[j] = i;
+                    j++;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
                 }
             }
-        }
-        System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
-        for(int i = 0; i < 6; i++){
-            System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
-        }
+            System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
+            for (int i = 0; i < 6; i++) {
+                System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
+            }
 
-        return bestMove;
+            return bestMove;
+        }
+        catch (TimeoutException e) {
+
+            System.err.println("Timeout!!! Random column selected");
+            return save;
+        }
     }
 
 

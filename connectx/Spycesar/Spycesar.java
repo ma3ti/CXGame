@@ -16,8 +16,8 @@ public class Spycesar implements CXPlayer {
     private CXCellState opponent;
     private int  TIMEOUT;
     private long START;
-    private int alpha = 1000;
-    private int beta = -1000;
+    private int alpha = -1000;
+    private int beta = 1000;
 
 
     // CONSTRUCTOR
@@ -32,7 +32,7 @@ public class Spycesar implements CXPlayer {
         TIMEOUT = timeout_in_secs;
 
     }
-
+    //TODO: Definire logica semi-random per prime mosse prima del minimax
     @Override
     public int selectColumn(CXBoard B) {
 
@@ -152,7 +152,7 @@ public class Spycesar implements CXPlayer {
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
-    //TODO: sistemare minimax, implementare alpha-beta pruning, controllare la funzione soprattutto le prime righe, capire come impostare depth
+    //TODO: sistemare minimax, implementare alpha-beta pruning, capire come impostare depth
     public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) throws TimeoutException {
 
         System.err.println("------- Arrivato a minimax -------");
@@ -184,8 +184,7 @@ public class Spycesar implements CXPlayer {
                            minimax(B, depth - 1, !isMax, alpha, beta, START));
                    alpha = Math.max(eval, alpha);
                    // CHECK ALPHABETA PRUNING
-                   //TODO: controllare return
-                   //if (beta <= alpha) break;
+                   if (beta <= alpha) break;
                        //return beta;
                    B.unmarkColumn();
                    //timeout
@@ -212,8 +211,7 @@ public class Spycesar implements CXPlayer {
                              minimax(B, depth - 1, !isMax, alpha, beta, START));
                     beta = Math.min(eval, beta);
                     // CHECK ALPHABETA PRUNING
-                    //TODO: controllare return
-                    //if (beta <= alpha) break;
+                    if (beta <= alpha) break;
                         // return beta;
                     B.unmarkColumn();
                     //timeout
@@ -229,7 +227,7 @@ public class Spycesar implements CXPlayer {
     }
 
 
-
+  //TODO: sistemare CheckTIME() e valutare se mettere findBestMove dentro selectColumn()
     public int findBestMove(CXBoard B){
 
         Integer[] L = B.getAvailableColumns();
@@ -254,7 +252,7 @@ public class Spycesar implements CXPlayer {
 
                     checktime();
                     B.markColumn(i);
-                    int score = minimax(B, 0, true, alpha, beta, START);
+                    int score = minimax(B, 0, false, alpha, beta, START);
                     System.err.println("------------------------------------------------------- SCORE COLONNA " + i + " = " + score);
                     B.unmarkColumn();
                     a[j] = score;
@@ -286,11 +284,9 @@ public class Spycesar implements CXPlayer {
     //a function that calculates the value of
     // the board depending on the placement of
     // pieces on the board.
-    //TODO: Controllare ancora evaluate, probabili valori sbagliati
     public int evaluate(CXBoard B) {
 
         CXCellState[][] board = B.getBoard();
-
 
         //CHECK ROWS
         for (int row = 0; row < B.M; row++){

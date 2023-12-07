@@ -30,8 +30,8 @@ public class Spycesar implements CXPlayer {
         myWin   = first ? CXGameState.WINP1 : CXGameState.WINP2;
         yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
         TIMEOUT = timeout_in_secs;
-
     }
+
     //TODO: Definire logica semi-random per prime mosse prima del minimax
     @Override
     public int selectColumn(CXBoard B) {
@@ -241,11 +241,12 @@ public class Spycesar implements CXPlayer {
             int bestScore = -1000;
             int bestMove = 0;
             int j = 0;
-            Integer[] a = {0, 0, 0, 0, 0, 0};
-            Integer[] b = {0, 0, 0, 0, 0, 0};
+            Integer[] a = {0, 0, 0, 0, 0, 0, 0};
+            Integer[] b = {0, 0, 0, 0, 0, 0, 0};
 
 
             for (int i : L) {
+            //for(int i = 0; i < L.length; i++){
                 if (!B.fullColumn(i)) {
 
                     //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
@@ -262,10 +263,14 @@ public class Spycesar implements CXPlayer {
                         bestScore = score;
                         bestMove = i;
                     }
+                    for (int z = 0; z < L.length; z++){
+                        System.out.println("COLONNE DISPONIBILI: " + L[z]);
+
+                    }
                 }
             }
             System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
-            for (int i = 0; i < 6; i++) {
+            for (int i = 0; i <= 6; i++) {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
 

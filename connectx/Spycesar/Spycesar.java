@@ -16,8 +16,8 @@ public class Spycesar implements CXPlayer {
     private CXCellState opponent;
     private int  TIMEOUT;
     private long START;
-    private int alpha = -1000;
-    private int beta = 1000;
+    private final int alpha = -1000;
+    private final int beta = 1000;
 
 
     // CONSTRUCTOR
@@ -182,9 +182,9 @@ public class Spycesar implements CXPlayer {
                    System.err.println("MarkColumn " + i);
                    eval = Math.max(eval, 
                            minimax(B, depth - 1, !isMax, alpha, beta, START));
-                   alpha = Math.max(eval, alpha);
+                   //alpha = Math.max(eval, alpha);
                    // CHECK ALPHABETA PRUNING
-                   if (beta <= alpha) break;
+                   //if (beta <= alpha) break;
                        //return beta;
                    B.unmarkColumn();
                    //timeout
@@ -209,9 +209,9 @@ public class Spycesar implements CXPlayer {
                     System.err.println("MarkColumn " + i);
                     eval = Math.min(eval,
                              minimax(B, depth - 1, !isMax, alpha, beta, START));
-                    beta = Math.min(eval, beta);
+                    //beta = Math.min(eval, beta);
                     // CHECK ALPHABETA PRUNING
-                    if (beta <= alpha) break;
+                   // if (beta <= alpha) break;
                         // return beta;
                     B.unmarkColumn();
                     //timeout
@@ -241,8 +241,9 @@ public class Spycesar implements CXPlayer {
             int bestScore = -1000;
             int bestMove = 0;
             int j = 0;
-            Integer[] a = {0, 0, 0, 0, 0, 0, 0};
-            Integer[] b = {0, 0, 0, 0, 0, 0, 0};
+            int[] a = new int[B.N];
+            int[] b = new int[B.N];
+            //Integer[] b = {0, 0, 0, 0, 0, 0, 0};
 
 
             for (int i : L) {
@@ -270,7 +271,8 @@ public class Spycesar implements CXPlayer {
                 }
             }
             System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
-            for (int i = 0; i <= 6; i++) {
+
+            for (int i = 0; i < B.N; i++) {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
 

@@ -35,4 +35,3 @@ Perchè singleMoveBlock prima funzionava che per ogni mia colonna che potevo sce
 in ogni colonna per verificare che con la mia mossa non sbloccasse la possibilita al mio adv di infilare il k-esimo marker,
 ritornando cosi tutte le colonne che non avessere ritornato un vantaggio all'avversario.
 con l'aggiunta di if(i != j) blocco direttamente la sequenza di k-1 simboli adv.
-

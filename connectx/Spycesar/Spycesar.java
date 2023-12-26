@@ -17,13 +17,18 @@ public class Spycesar implements CXPlayer {
     private final int alpha = -1000;
     private final int beta = 1000;
     // Nuova HashMap per memorizzare le valutazioni già calcolate
-    private Map<String, Integer> evaluatedConfigurations;
+    private HashMap<String, Integer> evaluatedConfigurations;
+    int numb = 1;
+    int countNumb = 1;
+
+
 
 
     // CONSTRUCTOR
     public Spycesar() {
 
     }
+
 
     @Override
     public void initPlayer(int M, int N, int X, boolean first, int timeout_in_secs) {
@@ -35,21 +40,20 @@ public class Spycesar implements CXPlayer {
         evaluatedConfigurations = new HashMap<>();
     }
 
-    //TODO: Definire logica semi-random per prime mosse prima del minimax
+
+
+    //TODO: Definire logica semi-random per prime X - 1 mosse prima del minimax
     @Override
     public int selectColumn(CXBoard B) {
 
         START = System.currentTimeMillis(); // Save starting time
         spycesar = (B.numOfMarkedCells() % 2 == 0) ? CXCellState.P1 : CXCellState.P2;
         opponent = (B.numOfMarkedCells() % 2 == 0) ? CXCellState.P2 : CXCellState.P1;
-        //System.out.println("Spycesar = " + spycesar + " AND " + " Opponent = " + opponent);
-
 
         // Logica semi-random per le prime k mosse
         // B.X >= 4
-        //if (B.numOfMarkedCells() < (B.X * 2) - 3) {
+        //if (B.numOfMarkedCells() <= (B.X * 2) - 3) return (B.N / 2) ;
 
-        //System.out.println("if");
 
         // first move in the center column if spycesar move first in the "1° round"
         // first move above the player or in the center column if spycesar move second in the "1° round"
@@ -72,6 +76,8 @@ public class Spycesar implements CXPlayer {
     }
 
 
+
+
     private void checktime() throws TimeoutException {
         if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0)) {
             System.err.println("Timeout Exception");
@@ -81,8 +87,9 @@ public class Spycesar implements CXPlayer {
 
 
 
-    //TODO: sistemare CheckTIME() e valutare se mettere findBestMove dentro selectColumn()
-    public int findBestMove(CXBoard B) {
+
+
+    private int findBestMove(CXBoard B) {
 
         Integer[] L = B.getAvailableColumns();
         int save = L[rand.nextInt(L.length)];
@@ -116,18 +123,21 @@ public class Spycesar implements CXPlayer {
                         bestScore = score;
                         bestMove = i;
                     }
-
+/*
                     for (Integer integer : L) {
                         System.out.println("COLONNE DISPONIBILI: " + integer);
                     }
+*/
                 }
             }
 
-            System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
+            //System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
 
             for (int i = 0; i < B.N; i++) {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
+
+            System.out.printf("B.getBoard() = " + B.getBoard());
 
             return bestMove;
         }
@@ -139,11 +149,14 @@ public class Spycesar implements CXPlayer {
     }
 
 
+
+
+
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
     //TODO: capire come impostare depth e sistemare HashMap per stati di gioco gia visualizzati
-    public int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) throws TimeoutException {
+    private int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START) throws TimeoutException {
 
         System.err.println("------- Arrivato a minimax -------");
         checktime();
@@ -217,7 +230,7 @@ public class Spycesar implements CXPlayer {
 
         String boardHash = calculateBoardHash(B);
 
-        System.out.println(" EVALUATE ");
+        //System.out.println(" EVALUATE ");
         System.out.println("BOARD HASH = " + boardHash);
 
         // Controlla se la valutazione è già presente nella cache
@@ -238,30 +251,32 @@ public class Spycesar implements CXPlayer {
 
 
 
+    // Calculate the hash of the board state config.
     private String calculateBoardHash(CXBoard B) {
 
         CXCellState[][] board = B.getBoard();
         StringBuilder hashBuilder = new StringBuilder();
 
+
         // Calcola l'hash della matrice dello stato del gioco
-        int boardHash = Arrays.deepHashCode(board);
-        hashBuilder.append(boardHash);
+        //int boardHash = Arrays.deepHashCode(board);
+        //hashBuilder.append(boardHash);
 
         // Aggiungi altre informazioni rilevanti, come il giocatore corrente
-        hashBuilder.append(spycesar.toString());
-/*
+        //hashBuilder.append(spycesar.toString());
+
         // Aggiungi la posizione delle pedine sul tabellone
         for (int row = 0; row < B.M; row++) {
             for (int col = 0; col < B.N; col++) {
                 hashBuilder.append(board[row][col].toString());
             }
         }
-*/
+
         // Aggiungi la storia delle mosse
-        CXCell movesHistory = B.getLastMove();
+        //CXCell movesHistory = B.getLastMove();
         //hashBuilder.append(movesHistory.toString());
 
-        hashBuilder.append(Arrays.deepHashCode(B.getAvailableColumns()));
+        //hashBuilder.append(Arrays.deepHashCode(B.getAvailableColumns()));
 
 
 
@@ -278,7 +293,7 @@ public class Spycesar implements CXPlayer {
     //a function that calculates the value of
     // the board depending on the placement of
     // pieces on the board.
-    public int calculateEvaluation(CXBoard B) {
+    private int calculateEvaluation(CXBoard B) {
 
         CXCellState[][] board = B.getBoard();
 

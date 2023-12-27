@@ -18,8 +18,7 @@ public class Spycesar implements CXPlayer {
     private final int beta = 1000;
     // Nuova HashMap per memorizzare le valutazioni già calcolate
     private HashMap<String, Integer> evaluatedConfigurations;
-    int numb = 1;
-    int countNumb = 1;
+    private int countMosse; // Per evitare di chiamare evaluate quando devo allineare X simboli per vinceri e ho fatto solo 4 mosse
 
 
 
@@ -38,6 +37,7 @@ public class Spycesar implements CXPlayer {
         yourWin = first ? CXGameState.WINP2 : CXGameState.WINP1;
         TIMEOUT = timeout_in_secs;
         evaluatedConfigurations = new HashMap<>();
+        countMosse = 0;
     }
 
 
@@ -50,27 +50,19 @@ public class Spycesar implements CXPlayer {
         spycesar = (B.numOfMarkedCells() % 2 == 0) ? CXCellState.P1 : CXCellState.P2;
         opponent = (B.numOfMarkedCells() % 2 == 0) ? CXCellState.P2 : CXCellState.P1;
 
-        // Logica semi-random per le prime k mosse
-        // B.X >= 4
-        //if (B.numOfMarkedCells() <= (B.X * 2) - 3) return (B.N / 2) ;
-
 
         // first move in the center column if spycesar move first in the "1° round"
         // first move above the player or in the center column if spycesar move second in the "1° round"
-        if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) return B.N / 2;
-
-
-        //definire una logica semirandom per le restanti prime k - 1 mosse
-        //else return save; // da togliere
-
-        //}
+        if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1){
+            incrementCountMosse();
+            return B.N / 2;
+        }
 
 /*
                     int col = singleMoveWin(B, L);
                     if (col != -1) return col;
                     else return singleMoveBlock(B, L);
 */
-
 
         return findBestMove(B);
     }
@@ -94,6 +86,7 @@ public class Spycesar implements CXPlayer {
         Integer[] L = B.getAvailableColumns();
         int save = L[rand.nextInt(L.length)];
         int maxDepth = 1;
+        incrementCountMosse();
 
         try {
 
@@ -137,7 +130,8 @@ public class Spycesar implements CXPlayer {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
 
-            System.out.printf("B.getBoard() = " + B.getBoard());
+            System.out.printf("FINAL BOARDHASH = " + calculateBoardHash(B) + " ");
+            System.out.printf("MOSSA NUMERO: " + getCountMosse());
 
             return bestMove;
         }
@@ -180,9 +174,10 @@ public class Spycesar implements CXPlayer {
                     //System.err.println(B.markColumn(i));
                     B.markColumn(i);
                     //System.err.println("MarkColumn " + i);
+                    incrementCountMosse();
                     eval = Math.max(eval,
                             minimax(B, depth - 1, !isMax, alpha, beta, START));
-
+                    decrementCountMosse();
                     B.unmarkColumn();
                     // CHECK ALPHABETA PRUNING
                     alpha = Math.max(eval, alpha);
@@ -194,7 +189,8 @@ public class Spycesar implements CXPlayer {
                 }
             }
             return eval;
-        } else {
+        }
+        else {
             // If this minimizer's move
             int eval = 1000;
             //System.err.println("IsMin");
@@ -229,15 +225,22 @@ public class Spycesar implements CXPlayer {
     private int evaluate(CXBoard B) {
 
         String boardHash = calculateBoardHash(B);
+        String mirrorBoardHash = calculateMirrorBoardHash(B);
 
-        //System.out.println(" EVALUATE ");
         System.out.println("BOARD HASH = " + boardHash);
 
         // Controlla se la valutazione è già presente nella cache
         if (evaluatedConfigurations.containsKey(boardHash)) {
-            System.out.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE ");
+            //System.out.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
             return evaluatedConfigurations.get(boardHash);
         }
+
+        // Valuta la configurazione trasposta orizzontalmente della matrice
+        if (evaluatedConfigurations.containsKey(mirrorBoardHash)) {
+            //System.out.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
+            return evaluatedConfigurations.get(mirrorBoardHash);
+        }
+
 
         // Se non è presente, calcola la valutazione normalmente
         int evaluation = calculateEvaluation(B);
@@ -257,14 +260,6 @@ public class Spycesar implements CXPlayer {
         CXCellState[][] board = B.getBoard();
         StringBuilder hashBuilder = new StringBuilder();
 
-
-        // Calcola l'hash della matrice dello stato del gioco
-        //int boardHash = Arrays.deepHashCode(board);
-        //hashBuilder.append(boardHash);
-
-        // Aggiungi altre informazioni rilevanti, come il giocatore corrente
-        //hashBuilder.append(spycesar.toString());
-
         // Aggiungi la posizione delle pedine sul tabellone
         for (int row = 0; row < B.M; row++) {
             for (int col = 0; col < B.N; col++) {
@@ -272,15 +267,26 @@ public class Spycesar implements CXPlayer {
             }
         }
 
-        // Aggiungi la storia delle mosse
-        //CXCell movesHistory = B.getLastMove();
-        //hashBuilder.append(movesHistory.toString());
-
-        //hashBuilder.append(Arrays.deepHashCode(B.getAvailableColumns()));
-
-
-
         return hashBuilder.toString();
+    }
+
+
+
+
+    // Calculate the hash of the mirror board state config.
+    private String calculateMirrorBoardHash(CXBoard B) {
+
+        CXCellState[][] board = B.getBoard();
+        StringBuilder mirroredBuilder = new StringBuilder();
+
+        // Riflessione orizzontale
+        for (int row = 0; row < B.M; row++) { // Supponendo che B.rows() restituisca il numero di righe
+            for (int col = B.N - 1; col >= 0; col--) { // Supponendo che B.cols() restituisca il numero di colonne
+                mirroredBuilder.append(board[row][col].toString()); // Supponendo che B.cellAt(i, j) restituisca il contenuto della cella (P1, P2, FREE)
+            }
+        }
+
+        return mirroredBuilder.toString();
     }
 
 
@@ -294,6 +300,8 @@ public class Spycesar implements CXPlayer {
     // the board depending on the placement of
     // pieces on the board.
     private int calculateEvaluation(CXBoard B) {
+
+        if(getCountMosse() < B.X - 1) return  0;
 
         CXCellState[][] board = B.getBoard();
 
@@ -565,6 +573,24 @@ public class Spycesar implements CXPlayer {
             System.out.println("Else random");
             return L[rand.nextInt(L.length)];
         }
+    }
+
+
+
+
+    private int getCountMosse(){
+
+        return this.countMosse;
+    }
+
+    private void incrementCountMosse(){
+
+        this.countMosse++;
+    }
+
+    private void decrementCountMosse(){
+
+        this.countMosse--;
     }
 
 

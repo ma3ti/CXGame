@@ -18,7 +18,7 @@ public class Spycesar implements CXPlayer {
     private final int beta = 1000;
     // Nuova HashMap per memorizzare le valutazioni già calcolate
     private HashMap<String, Integer> evaluatedConfigurations;
-    private int countMosse; // Per evitare di chiamare evaluate quando devo allineare X simboli per vinceri e ho fatto solo 4 mosse
+    private int countMosse; // Per evitare di chiamare evaluate quando devo allineare X simboli per vincere e ho fatto solo 4 mosse
 
 
 
@@ -57,26 +57,35 @@ public class Spycesar implements CXPlayer {
             incrementCountMosse();
             return B.N / 2;
         }
+        
+        /*
+        else {
 
-/*
-                    int col = singleMoveWin(B, L);
-                    if (col != -1) return col;
-                    else return singleMoveBlock(B, L);
-*/
+
+            Integer[] L = B.getAvailableColumns();
+
+            if (getCountMosse() >= B.X){
+
+                if (singleMoveBlock(B,L) != -1) return singleMoveBlock(B,L);
+                else if (singleMoveWin(B, L) != -1) { return singleMoveWin(B, L);                }
+                int col = singleMoveWin(B, L);
+                if (col != -1) return col;
+                else return singleMoveBlock(B, L);
+
+
+            }
+
+
+        }
+
+         */
+
+
+
+
 
         return findBestMove(B);
     }
-
-
-
-
-    private void checktime() throws TimeoutException {
-        if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0)) {
-            System.err.println("Timeout Exception");
-            throw new TimeoutException();
-        }
-    }
-
 
 
 
@@ -97,6 +106,8 @@ public class Spycesar implements CXPlayer {
             int j = 0;
             int[] a = new int[B.N]; // array of scores
             int[] b = new int[B.N]; // array of free col
+
+            //maxDepth = calculateDepth(B, 10000);
 
 
             for (int i : L) {
@@ -280,9 +291,9 @@ public class Spycesar implements CXPlayer {
         StringBuilder mirroredBuilder = new StringBuilder();
 
         // Riflessione orizzontale
-        for (int row = 0; row < B.M; row++) { // Supponendo che B.rows() restituisca il numero di righe
-            for (int col = B.N - 1; col >= 0; col--) { // Supponendo che B.cols() restituisca il numero di colonne
-                mirroredBuilder.append(board[row][col].toString()); // Supponendo che B.cellAt(i, j) restituisca il contenuto della cella (P1, P2, FREE)
+        for (int row = 0; row < B.M; row++) {
+            for (int col = B.N - 1; col >= 0; col--) {
+                mirroredBuilder.append(board[row][col].toString());
             }
         }
 
@@ -291,6 +302,24 @@ public class Spycesar implements CXPlayer {
 
 
 
+    //TODO: implements depth
+    private int calculateDepth(CXBoard board, long elapsedTime) {
+        // Calcolo del tempo rimanente
+        long remainingTime = 10000 - elapsedTime;
+
+        // Se il tempo rimanente è inferiore a una soglia, diminuisci la profondità
+        if (remainingTime < 2000) { // Ad esempio, se rimangono meno di 2 secondi
+            return 1; // Profondità minima per garantire una mossa entro il limite di tempo
+        }
+
+        // Calcolo della fase del gioco basata sul numero di celle marcate
+        int markedCells = board.numOfMarkedCells();
+        if (markedCells < (board.M * board.N) / 2) { // Ad esempio, se meno della metà delle celle è stata marcate
+            return 3; // Profondità intermedia
+        } else {
+            return 5; // Profondità maggiore nella seconda metà del gioco
+        }
+    }
 
 
 
@@ -301,7 +330,7 @@ public class Spycesar implements CXPlayer {
     // pieces on the board.
     private int calculateEvaluation(CXBoard B) {
 
-        if(getCountMosse() < B.X - 1) return  0;
+        if(getCountMosse() < B.X) return  0;
 
         CXCellState[][] board = B.getBoard();
 
@@ -571,10 +600,18 @@ public class Spycesar implements CXPlayer {
             return X[rand.nextInt(X.length)];
         } else {
             System.out.println("Else random");
-            return L[rand.nextInt(L.length)];
+            //return L[rand.nextInt(L.length)];
+            return  -1;
         }
     }
 
+
+    private void checktime() throws TimeoutException {
+        if ((System.currentTimeMillis() - START) / 1000.0 >= TIMEOUT * (99.0 / 100.0)) {
+            System.err.println("Timeout Exception");
+            throw new TimeoutException();
+        }
+    }
 
 
 
@@ -592,6 +629,13 @@ public class Spycesar implements CXPlayer {
 
         this.countMosse--;
     }
+
+
+    private int getResidualMove(CXBoard board){
+
+       return board.getAvailableColumns().length / 2;
+    }
+
 
 
 

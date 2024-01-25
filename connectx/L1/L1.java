@@ -101,6 +101,8 @@ public class L1 implements CXPlayer {
 		return -1;
 	}
 
+
+
 	/**
    * Check if we can block adversary's victory 
    *

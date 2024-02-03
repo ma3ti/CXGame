@@ -56,12 +56,14 @@ public class Spycesar implements CXPlayer {
 
         try{
 
+
             // first move in the center column if spycesar move first in the "1° round"
             // first move above the player or in the center column if spycesar move second in the "1° round"
             if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) {
                 for (int i = 0; i <= B.numOfMarkedCells(); i++) {
                     incrementCountMosse();
                 }
+
                 return B.N / 2;
             }
             else if(B.numOfMarkedCells() < (B.X * 2) - 2) {
@@ -101,15 +103,13 @@ public class Spycesar implements CXPlayer {
             for (int i : L) {
                 if (!B.fullColumn(i)) {
 
-                    double hVal = setHeuristicsValue(i);
 
                     //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
 
                     checktime();
                     B.markColumn(i);
                     incrementCountMosse();
-                    int score = minimax(B, 1, false, alpha, beta, START, hVal);
-                    //System.err.println("------------------------------------------------------- SCORE COLONNA " + i + " = " + score);
+                    int score = minimax(B, false, alpha, beta);
                     B.unmarkColumn();
                     decrementCountMosse();
                     a[j] = score;
@@ -134,16 +134,15 @@ public class Spycesar implements CXPlayer {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
 
-            //System.out.printf("FINAL BOARDHASH = " + calculateBoardHash(B) + " ");
-            //System.out.printf("MOSSA NUMERO: " + getCountMosse());
-
             incrementCountMosse();
+
             return bestMove;
         }
         catch (TimeoutException e) {
 
             System.err.println("Timeout!!! Random column selected");
             incrementCountMosse();
+
             return save;
         }
     }
@@ -155,7 +154,7 @@ public class Spycesar implements CXPlayer {
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
-    private int minimax(CXBoard B, int depth, Boolean isMax, int alpha, int beta, long START, double hVal) throws TimeoutException {
+    private int minimax(CXBoard B, Boolean isMax, int alpha, int beta) throws TimeoutException {
 
         checktime();
         int score = evaluate(B);
@@ -165,29 +164,24 @@ public class Spycesar implements CXPlayer {
             return score;
         }
 
-
         Integer[] L = B.getAvailableColumns();
 
         // If this maximizer's move
         if (isMax) {
-            //System.out.println("IsMax");
             int eval = -1000;
             for (int i : L) {
-                //System.err.println("IsMax1");
                 if (!B.fullColumn(i)) {
-                    //System.err.println(B.markColumn(i));
                     B.markColumn(i);
-                    //System.err.println("MarkColumn " + i);
                     incrementCountMosse();
                     eval = Math.max(eval,
-                            minimax(B, depth - 1, !isMax, alpha, beta, START, hVal));
+                            minimax(B, !isMax, alpha, beta));
 
                     decrementCountMosse();
                     B.unmarkColumn();
                     // CHECK ALPHABETA PRUNING
                     alpha = Math.max(eval, alpha);
                     if (beta <= alpha) {
-                        //System.out.println("prune");
+                        //System.err.println("prune");
                         break;
                     }
 
@@ -198,21 +192,17 @@ public class Spycesar implements CXPlayer {
         else {
             // If this minimizer's move
             int eval = 1000;
-            //System.err.println("IsMin");
             for (int i : L) {
-                //System.err.println("IsMin1");
                 if (!B.fullColumn(i)) {
-                    //System.err.println(B.markColumn(i));
                     B.markColumn(i);
-                    //System.err.println("MarkColumn " + i);
                     eval = Math.min(eval,
-                            minimax(B, depth - 1, !isMax, alpha, beta, START, hVal));
+                            minimax(B, !isMax, alpha, beta));
 
                     B.unmarkColumn();
                     // CHECK ALPHABETA PRUNING
                     beta = Math.min(eval, beta);
                     if (beta <= alpha) {
-                        //System.out.println("prune");
+                        //System.err.println("prune");
                         break;
                     }
 
@@ -231,17 +221,17 @@ public class Spycesar implements CXPlayer {
         String boardHash = calculateBoardHash(B);
         String mirrorBoardHash = calculateMirrorBoardHash(B);
 
-        //System.out.println("BOARD HASH = " + boardHash);
+        //System.err.println("BOARD HASH = " + boardHash);
 
         // Controlla se la valutazione è già presente nella cache
         if (evaluatedConfigurations.containsKey(boardHash)) {
-            //System.out.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
+            //System.err.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
             return evaluatedConfigurations.get(boardHash);
         }
 
         // Valuta la configurazione trasposta orizzontalmente della matrice
         if (evaluatedConfigurations.containsKey(mirrorBoardHash)) {
-            //System.out.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
+            //System.err.println(" VALUTAZIONE GIA PRESENTE NELLA CACHE: " + evaluatedConfigurations.get(boardHash));
             return evaluatedConfigurations.get(mirrorBoardHash);
         }
 
@@ -295,25 +285,6 @@ public class Spycesar implements CXPlayer {
 
 
 
-    //TODO: implements depth
-    private int calculateDepth(CXBoard board, long elapsedTime) {
-        // Calcolo del tempo rimanente
-        long remainingTime = 10000 - elapsedTime;
-
-        // Se il tempo rimanente è inferiore a una soglia, diminuisci la profondità
-        if (remainingTime < 2000) { // Ad esempio, se rimangono meno di 2 secondi
-            return 1; // Profondità minima per garantire una mossa entro il limite di tempo
-        }
-
-        // Calcolo della fase del gioco basata sul numero di celle marcate
-        int markedCells = board.numOfMarkedCells();
-        if (markedCells < (board.M * board.N) / 2) { // Ad esempio, se meno della metà delle celle è stata marcate
-            return 3; // Profondità intermedia
-        } else {
-            return 5; // Profondità maggiore nella seconda metà del gioco
-        }
-    }
-
 
 
 
@@ -326,6 +297,7 @@ public class Spycesar implements CXPlayer {
         if(getCountMosse() < B.X - 1) return  0;
 
         CXCellState[][] board = B.getBoard();
+
 
         //CHECK ROWS
         for (int row = 0; row < B.M; row++) {
@@ -348,8 +320,6 @@ public class Spycesar implements CXPlayer {
 
                 if (playerScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if(playerScore >= B.X) return 10;
-                //if(opponentScore >= B.X) return -10;
             }
         }
 
@@ -375,8 +345,6 @@ public class Spycesar implements CXPlayer {
 
                 if (playerScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if(playerScore >= B.X) return 10;
-                //if(opponentScore >= B.X) return -10;
             }
         }
 
@@ -405,15 +373,11 @@ public class Spycesar implements CXPlayer {
 
                 if (playerScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if(playerScore >= B.X) return 10;
-                //if(opponentScore >= B.X) return -10;
 
                 count++;
             }
         }
         // CHECK_DIAG FOR LAST ROW
-        //int count = 0;
-        //int row = B.M - 1;
 
         int countrighe = 0;
 
@@ -443,8 +407,6 @@ public class Spycesar implements CXPlayer {
 
                 if (playerScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if (playerScore >= B.X) return 10;
-                //if (opponentScore >= B.X) return -10;
 
                 count++;
             }
@@ -477,16 +439,12 @@ public class Spycesar implements CXPlayer {
 
                 if (playserScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if(playserScore >= B.X) return 10;
-                //if(opponentScore >= B.X) return -10;
 
                 count++;
-                //j--;
             }
         }
         // CHECK_ANTI-DIAG FOR LAST ROW
 
-        //int row = B.M - 1;
         countrighe = 0;
 
         for (int col = B.N - 1; col >= B.X - 1; col--) {
@@ -510,8 +468,6 @@ public class Spycesar implements CXPlayer {
 
                 if (playerScore >= B.X) return (B.numOfFreeCells() + 1);
                 if (opponentScore >= B.X) return (((-1) * B.numOfFreeCells()) - 1);
-                //if (playerScore >= B.X) return 10;
-                //if (opponentScore >= B.X) return -10;
 
                 count++;
             }
@@ -546,7 +502,7 @@ public class Spycesar implements CXPlayer {
             }
             B.unmarkColumn();
         }
-        //System.out.println("colonna vincente non trovata. vado a SingleMoveBlock() ");
+        //System.err.println("colonna vincente non trovata. vado a SingleMoveBlock() ");
         return -1;
     }
 
@@ -575,27 +531,29 @@ public class Spycesar implements CXPlayer {
                     if (state == yourWin) {
                         T.remove(i); // We ignore the i-th column as a possible move
                         stop = true; // We don't need to check more
-                        //System.out.println("SingleMoveBlock trovato, colonna : " + i + " e mossa adv in " + L[j]);
+                        //System.err.println("SingleMoveBlock trovato, colonna : " + i + " e mossa adv in " + L[j]);
                     }
                     B.unmarkColumn();
                 }
             }
             B.unmarkColumn();
-            //System.out.println("SingleMoveBlock non trovato per colonna "+ i);
+            //System.err.println("SingleMoveBlock non trovato per colonna "+ i);
 
         }
 
         Integer[] X = T.toArray(new Integer[T.size()]);
 
-        if (T.size() == 1){
-            System.err.println("T.size == 1");
+        if (T.size() >= 1){
+            System.err.println("T.size >= 1");
             return findBestMove(B,X);
         }
+        /*
         if (T.size() > 1) {
             System.err.println("T.size > 1");
             //return X[rand.nextInt(X.length)];
             return findBestMove(B, X);
         }
+        */
         else { // T.size == 0 --> qualsiasi mossa faccio perdo
             System.out.println("Else random");
             //return L[rand.nextInt(L.length)];
@@ -620,14 +578,6 @@ public class Spycesar implements CXPlayer {
         return false;
     }
 
-
-    //TODO: pensare se serve settare un peso ad ogni mossa possibile
-    private double setHeuristicsValue(int column) {
-
-
-
-        return 1;
-    }
 
 
     private int getCountMosse(){

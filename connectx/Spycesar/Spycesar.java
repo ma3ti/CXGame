@@ -13,11 +13,10 @@ public class Spycesar implements CXPlayer {
     private CXCellState spycesar;
     private CXCellState opponent;
     private int TIMEOUT;
-    private long START;
+    private long START, START2;
     private final int alpha = -1000;
     private final int beta = 1000;
-    // Nuova HashMap per memorizzare le valutazioni già calcolate
-    private HashMap<String, Integer> evaluatedConfigurations;
+    private HashMap<String, Integer> evaluatedConfigurations;     // Nuova HashMap per memorizzare le valutazioni già calcolate
     private int countMosse; // Per evitare di chiamare evaluate quando devo allineare X simboli per vincere e ho fatto solo 4 mosse
     long timeout_in_millisecs;
     Integer[] freeCol;
@@ -56,26 +55,30 @@ public class Spycesar implements CXPlayer {
 
         try{
 
-
             // first move in the center column if spycesar move first in the "1° round"
             // first move above the player or in the center column if spycesar move second in the "1° round"
             if (B.numOfMarkedCells() == 0 || B.numOfMarkedCells() == 1) {
                 for (int i = 0; i <= B.numOfMarkedCells(); i++) {
                     incrementCountMosse();
                 }
-
                 return B.N / 2;
             }
+
             else if(B.numOfMarkedCells() < (B.X * 2) - 2) {
                 return findBestMove(B,freeCol);
             }
             else {
+
                 int col = singleMoveWin(B, freeCol);
                 if(col != - 1){
                     return col;
                 }
+
                 return singleMoveBlock(B,freeCol);
             }
+
+             //    return findBestMove(B, freeCol);
+            //}
         }
         catch (TimeoutException e){
 
@@ -86,7 +89,6 @@ public class Spycesar implements CXPlayer {
 
 
 
-    //TODO: sistemare mosse su colonna 0 quando non ho risultati da evaluate e tutte le colonne hanno val 0.
     private int findBestMove(CXBoard B, Integer[] L) {
 
         int save = L[rand.nextInt(L.length)];
@@ -102,14 +104,14 @@ public class Spycesar implements CXPlayer {
 
             for (int i : L) {
                 if (!B.fullColumn(i)) {
-
-
                     //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
 
+                    System.err.println("Number of free cell: " + getNumberOfFreeCell(B));
                     checktime();
                     B.markColumn(i);
                     incrementCountMosse();
-                    int score = minimax(B, false, alpha, beta);
+                    START2 = System.currentTimeMillis();
+                    int score = minimax(B, false, alpha, beta, L.length);
                     B.unmarkColumn();
                     decrementCountMosse();
                     a[j] = score;
@@ -129,10 +131,10 @@ public class Spycesar implements CXPlayer {
 
             //System.out.println("BestMove = " + bestMove + " BestScore = " + bestScore);
 
-            System.err.println("-----------------------------------");
             for (int i = 0; i < L.length; i++) {
                 System.err.println("COLONNA " + b[i] + " SCORE " + a[i]);
             }
+            System.err.println("-----------------------------------");
 
             incrementCountMosse();
 
@@ -154,12 +156,12 @@ public class Spycesar implements CXPlayer {
     // This is the minimax function. It considers all
     // the possible ways the game can go and returns
     // the value of the board
-    private int minimax(CXBoard B, Boolean isMax, int alpha, int beta) throws TimeoutException {
+    private int minimax(CXBoard B, Boolean isMax, int alpha, int beta, int nCol) throws TimeoutException {
 
         checktime();
         int score = evaluate(B);
 
-        if (B.gameState() != CXGameState.OPEN || checktimeToCutDepth()) {
+        if (B.gameState() != CXGameState.OPEN || checktimeToCutDepth(B, nCol)) {
             //System.err.println("Score = " + score);
             return score;
         }
@@ -174,7 +176,7 @@ public class Spycesar implements CXPlayer {
                     B.markColumn(i);
                     incrementCountMosse();
                     eval = Math.max(eval,
-                            minimax(B, !isMax, alpha, beta));
+                            minimax(B, !isMax, alpha, beta, nCol));
 
                     decrementCountMosse();
                     B.unmarkColumn();
@@ -196,7 +198,7 @@ public class Spycesar implements CXPlayer {
                 if (!B.fullColumn(i)) {
                     B.markColumn(i);
                     eval = Math.min(eval,
-                            minimax(B, !isMax, alpha, beta));
+                            minimax(B, !isMax, alpha, beta, nCol));
 
                     B.unmarkColumn();
                     // CHECK ALPHABETA PRUNING
@@ -288,7 +290,6 @@ public class Spycesar implements CXPlayer {
 
 
 
-    //TODO: semplificare evaluate
     //a function that calculates the value of
     // the board depending on the placement of
     // pieces on the board.
@@ -497,7 +498,8 @@ public class Spycesar implements CXPlayer {
             checktime(); // Check timeout at every iteration
             CXGameState state = B.markColumn(i);
             if (state == myWin) {
-                System.out.println("colonna vincente : " + i);
+                System.err.println("colonna vincente : " + i);
+                B.unmarkColumn();
                 return i; // Winning column found: return immediately
             }
             B.unmarkColumn();
@@ -517,14 +519,13 @@ public class Spycesar implements CXPlayer {
 
         for (int i : L) {
             checktime();
-            T.add(i); // We consider column i as a possible move
             B.markColumn(i);
+            T.add(i); // We consider column i as a possible move
 
             int j;
             boolean stop;
 
             for (j = 0, stop = false; j < L.length && !stop; j++) {
-                //try {Thread.sleep((int)(0.2*1000*TIMEOUT));} catch (Exception e) {} // Uncomment to test timeout
                 checktime();
                 if (!B.fullColumn(L[j])) {
                     CXGameState state = B.markColumn(L[j]);
@@ -543,8 +544,8 @@ public class Spycesar implements CXPlayer {
 
         Integer[] X = T.toArray(new Integer[T.size()]);
 
-        if (T.size() >= 1){
-            System.err.println("T.size >= 1");
+        if (!T.isEmpty()){
+            //System.err.println("T.size >= 1");
             return findBestMove(B,X);
         }
         /*
@@ -555,7 +556,7 @@ public class Spycesar implements CXPlayer {
         }
         */
         else { // T.size == 0 --> qualsiasi mossa faccio perdo
-            System.out.println("Else random");
+            //System.out.println("Else random");
             //return L[rand.nextInt(L.length)];
             return findBestMove(B, L);
         }
@@ -570,12 +571,27 @@ public class Spycesar implements CXPlayer {
     }
 
 
-    private boolean checktimeToCutDepth() {
-        if ((System.currentTimeMillis() - START) / 1000.0 >= (TIMEOUT * (97.0 / 100.0)) / freeCol.length) {
-            //System.err.println("DEPTH cut");
-            return true;
-        }
-        return false;
+    private boolean checktimeToCutDepth(CXBoard B,int colNumber) {
+
+        int freeCell = getNumberOfFreeCell(B);
+
+        if(freeCell <= 25) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0)) / colNumber;
+
+        else if(freeCell <= 36) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.90) / colNumber;
+
+        else if(freeCell <= 49) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.80) / colNumber;
+
+        else if(freeCell <= 64) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.70) / colNumber;
+
+        else if(freeCell <= 100) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.45) / colNumber;
+
+        else if(freeCell <= 225) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.30) / colNumber;
+
+        else if(freeCell <= 500) return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.15) / colNumber;
+
+        else return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0) * 0.05) / colNumber;
+
+        //return (System.currentTimeMillis() - START2) / 1000.0 >= (TIMEOUT * (96.0 / 100.0)) / colNumber;
     }
 
 
@@ -593,6 +609,12 @@ public class Spycesar implements CXPlayer {
     private void decrementCountMosse(){
 
         this.countMosse--;
+    }
+
+
+    private int getNumberOfFreeCell(CXBoard B){
+
+        return (B.M * B.N) - B.getMarkedCells().length;
     }
 
 
